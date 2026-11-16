@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Donde el Vlady | Menú Digital</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #111111;
+            color: #f3f4f6;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+
+<body class="pb-28">
+
+    <!-- HEADER -->
+    <header
+        class="sticky top-0 z-30 bg-gradient-to-r from-red-900 via-red-800 to-red-900 border-b border-yellow-500/40 shadow-lg">
+        <div class="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+            <div>
+                <span class="text-xs font-bold uppercase tracking-widest text-yellow-300 block">Menú Digital</span>
+                <h1 class="text-2xl font-extrabold text-white tracking-tight">Donde el <span
+                        class="text-yellow-400">Vlady</span> 🍔</h1>
+            </div>
+            <div class="text-right text-xs text-red-100 bg-black/30 px-3 py-1.5 rounded-lg border border-white/10">
+                <p class="font-semibold text-yellow-400">Bebidas combos: Pepsi</p>
+                <p>+$0.25 por tarrina</p>
+            </div>
+        </div>
+
+        <!-- BARRA DE CATEGORÍAS -->
+        <nav id="category-nav"
+            class="max-w-md mx-auto px-3 py-2 flex gap-2 overflow-x-auto no-scrollbar bg-neutral-900/90 border-t border-white/10">
+        </nav>
+    </header>
+
+    <!-- BUSCADOR -->
+    <div class="max-w-md mx-auto px-4 mt-4">
+        <input id="search-input" type="text" placeholder="🔍 Buscar salchipapa, alitas, hamburguesa..."
+            class="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-400 focus:outline-none focus:border-yellow-400" />
+    </div>
+
+    <!-- CONTENEDOR DEL MENÚ -->
+    <main id="menu-container" class="max-w-md mx-auto px-4 mt-4 space-y-6"></main>
+
+    <!-- BOTÓN FLOTANTE DEL CARRITO -->
+    <div id="cart-bar"
+        class="fixed bottom-0 inset-x-0 z-40 hidden bg-neutral-900/95 backdrop-blur border-t border-yellow-500/40 p-3">
+        <div class="max-w-md mx-auto flex items-center justify-between gap-3">
+            <div>
+                <p id="cart-count" class="text-xs text-yellow-400 font-bold uppercase">0 platos seleccionados</p>
+                <p id="cart-total-preview" class="text-lg font-extrabold text-white">$0.00 <span
+                        class="text-xs font-normal text-neutral-400">(inc. tarrinas)</span></p>
+            </div>
+            <button onclick="openCheckoutModal()"
+                class="bg-yellow-400 hover:bg-yellow-300 active:scale-95 transition text-black font-extrabold px-5 py-3 rounded-xl text-sm shadow-lg">
+                Ver Pedido y Enviar 👉
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL PARA PERSONALIZAR PLATO (Sabores / Notas) -->
+    <div id="item-modal"
+        class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div
+            class="bg-neutral-900 border border-neutral-700 w-full max-w-md rounded-t-2xl sm:rounded-2xl p-5 space-y-4">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h3 id="modal-item-name" class="text-lg font-bold text-white"></h3>
+                    <p id="modal-item-desc" class="text-xs text-neutral-400 mt-0.5"></p>
+                </div>
+                <button onclick="closeItemModal()"
+                    class="text-neutral-400 hover:text-white text-xl font-bold px-2">✕</button>
+            </div>
+
+            <!-- Selector obligatorio de sabor si aplica -->
+            <div id="modal-options-container" class="hidden space-y-2">
+                <label class="block text-xs font-bold uppercase text-yellow-400">Elige una opción (Obligatorio):</label>
+                <div id="modal-options-list" class="grid grid-cols-2 gap-2"></div>
+            </div>
+
+            <!-- Notas de cocina -->
+            <div>
+                <label class="block text-xs font-bold uppercase text-neutral-300 mb-1">¿Alguna indicación para cocina?
+                    (Opcional)</label>
+                <input id="modal-item-note" type="text" placeholder="Ej: Sin cebolla, sin mayonesa, salsas aparte..."
+                    class="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-yellow-400" />
+            </div>
+
+            <!-- Cantidad -->
+            <div class="flex items-center justify-between bg-neutral-800 px-4 py-2.5 rounded-xl">
+                <span class="text-sm font-semibold">Cantidad</span>
+                <div class="flex items-center gap-4">
+                    <button onclick="changeModalQty(-1)"
+                        class="w-8 h-8 rounded-lg bg-neutral-700 font-bold text-lg">-</button>
+                    <span id="modal-item-qty" class="font-bold text-base">1</span>
+                    <button onclick="changeModalQty(1)"
+                        class="w-8 h-8 rounded-lg bg-yellow-400 text-black font-bold text-lg">+</button>
+                </div>
+            </div>
+
+            <button onclick="confirmAddToCart()"
+                class="w-full bg-red-600 hover:bg-red-500 text-white font-extrabold py-3 rounded-xl text-sm shadow-lg">
+                Agregar al pedido
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL DE CHECKOUT Y ENVÍO A WHATSAPP -->
+    <div id="checkout-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-sm overflow-y-auto">
+        <div class="min-h-screen flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div
+                class="bg-neutral-900 border border-neutral-700 w-full max-w-md rounded-t-2xl sm:rounded-2xl p-5 space-y-4">
+                <div class="flex justify-between items-center border-b border-neutral-800 pb-3">
+                    <h2 class="text-lg font-extrabold text-yellow-400">Confirmar tu Pedido 🍔</h2>
+                    <button onclick="closeCheckoutModal()"
+                        class="text-neutral-400 hover:text-white text-xl font-bold px-2">✕</button>
+                </div>
+
+                <!-- Lista de items en el carrito -->
+                <div id="checkout-items" class="space-y-2 max-h-52 overflow-y-auto pr-1"></div>
+
+                <!-- Resumen de costos -->
+                <div class="bg-neutral-800/90 p-3.5 rounded-xl space-y-1.5 text-sm border border-neutral-700">
+                    <div class="flex justify-between text-neutral-300">
+                        <span>Subtotal comida/bebidas:</span>
+                        <span id="summary-subtotal" class="font-semibold">$0.00</span>
+                    </div>
+                    <div class="flex justify-between text-neutral-300">
+                        <span id="summary-tarrinas-label">🥡 Tarrinas para llevar ($0.25 c/u):</span>
+                        <span id="summary-tarrinas" class="font-semibold">$0.00</span>
+                    </div>
+                    <div
+                        class="flex justify-between text-base font-extrabold text-yellow-400 pt-1.5 border-t border-neutral-700">
+                        <span>TOTAL COMIDA:</span>
+                        <span id="summary-total">$0.00</span>
+                    </div>
+                    <p class="text-[11px] text-amber-300 pt-1">
+                        ⚠️ *Si es a domicilio, el valor de la carrera del motorizado es aparte y te lo confirmaremos al
+                        recibir tu pedido.*
+                    </p>
+                </div>
+
+                <!-- Datos del cliente -->
+                <div class="space-y-3 text-sm">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-neutral-300 mb-1">Tu Nombre *</label>
+                        <input id="client-name" type="text" placeholder="Ej: Carlos Mendoza"
+                            class="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-white" />
+                    </div>
+
+                    <!-- Modalidad de entrega -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-neutral-300 mb-1">¿Cómo deseas tu pedido?
+                            *</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button type="button" id="btn-delivery" onclick="setDeliveryType('Domicilio')"
+                                class="py-2.5 rounded-xl font-bold border border-yellow-400 bg-yellow-400/20 text-yellow-300">
+                                🛵 A Domicilio
+                            </button>
+                            <button type="button" id="btn-pickup" onclick="setDeliveryType('Retirar en Local')"
+                                class="py-2.5 rounded-xl font-bold border border-neutral-700 bg-neutral-800 text-neutral-300">
+                                🏪 Retirar en Local
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Bloque exclusivo para Domicilio (GPS + Referencia) -->
+                    <div id="delivery-fields"
+                        class="space-y-2.5 bg-neutral-800/50 p-3 rounded-xl border border-neutral-800">
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-neutral-300 mb-1">Ubicación GPS para el
+                                motorizado</label>
+                            <button type="button" onclick="getGPSLocation()" id="gps-btn"
+                                class="w-full py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow">
+                                📍 Obtener mi ubicación GPS actual
+                            </button>
+                            <p id="gps-status" class="text-[11px] text-neutral-400 mt-1">Opcional si envías tu ubicación
+                                directamente en el chat.</p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-neutral-300 mb-1">Barrio, Calles y
+                                Referencia de la casa *</label>
+                            <textarea id="client-address" rows="2"
+                                placeholder="Ej: Barrio San Felipe, casa blanca de 2 pisos frente al parque, portón negro..."
+                                class="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-white"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Método de pago -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-neutral-300 mb-1">Método de Pago *</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button type="button" id="btn-cash" onclick="setPaymentType('Efectivo')"
+                                class="py-2 rounded-xl font-bold border border-yellow-400 bg-yellow-400/20 text-yellow-300">
+                                💵 Efectivo
+                            </button>
+                            <button type="button" id="btn-transfer" onclick="setPaymentType('Transferencia')"
+                                class="py-2 rounded-xl font-bold border border-neutral-700 bg-neutral-800 text-neutral-300">
+                                🏦 Transferencia
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Con qué billete paga -->
+                    <div id="cash-field">
+                        <label class="block text-xs font-bold uppercase text-neutral-300 mb-1">¿Con qué billete vas a
+                            pagar? (Para enviar vuelto)</label>
+                        <input id="client-cash-bill" type="number" step="0.01"
+                            placeholder="Ej: 10 o 20 (o déjalo vacío si tienes suelto)"
+                            class="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-white" />
+                    </div>
+                </div>
+
+                <button onclick="sendOrderToWhatsApp()"
+                    class="w-full bg-green-600 hover:bg-green-500 text-white font-extrabold py-3.5 rounded-xl text-base shadow-lg flex items-center justify-center gap-2">
+                    📲 Enviar Pedido por WhatsApp
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =========================================================================
+        // 1. CONFIGURACIÓN DEL LOCAL (CAMBIA AQUÍ EL NÚMERO DE WHATSAPP DEL LOCAL)
+        // =========================================================================
+        const WHATSAPP_NUMBER = "593999999999"; // Formato internacional sin '+' (593 + 9 dígitos)
+        const COSTO_TARRINA = 0.25;
+
+        // =========================================================================
+        // 2. BASE DE DATOS COMPLETA DEL MENÚ "DONDE EL VLADY"
+        // tarrina: true -> suma $0.25 por cada unidad de este plato
+        // =========================================================================
+        const MENU_DATA = [
+            {
+                id: "papitas",
+                nombre: "🍟 Papitas y Mixtas",
+                items: [
+                    { id: "p1", nombre: "Salchipapa", precio: 2.00, desc: "Clásica porción de papas con salchicha", tarrina: true },
+                    { id: "p2", nombre: "Papi huevo", precio: 2.00, desc: "Papas fritas + huevo", tarrina: true },
+                    { id: "p3", nombre: "Papi pollo", precio: 2.50, desc: "Papas fritas + presa de pollo", tarrina: true },
+                    { id: "p4", nombre: "Papi carne", precio: 2.50, desc: "Papas fritas + carne", tarrina: true },
+                    { id: "p5", nombre: "Mixta: Salchicha + huevo", precio: 2.25, desc: "Con papas fritas", tarrina: true },
+                    { id: "p6", nombre: "Mixta: Pollo + salchicha", precio: 2.75, desc: "Con papas fritas", tarrina: true },
+                    { id: "p7", nombre: "Mixta: Pollo + huevo", precio: 2.75, desc: "Con papas fritas", tarrina: true },
+                    { id: "p8", nombre: "Mixta: Pollo + carne", precio: 3.75, desc: "Con papas fritas", tarrina: true },
+                    { id: "p9", nombre: "Mixta: Carne + salchicha", precio: 2.75, desc: "Con papas fritas", tarrina: true },
+                    { id: "p10", nombre: "Mixta: Carne + huevo", precio: 2.75, desc: "Con papas fritas", tarrina: true },
+                    { id: "p14", nombre: "Completa: Pollo + Salchicha + Huevo", precio: 3.00, desc: "Con papas fritas", tarrina: true },
+                    { id: "p15", nombre: "Completa: Carne + Salchicha + Huevo", precio: 3.00, desc: "Con papas fritas", tarrina: true },
+                    { id: "p16", nombre: "Salchipapa Cheese", precio: 4.25, desc: "Salchicha, queso cheddar, tocino y papas", tarrina: true },
+                    { id: "p17", nombre: "Picadita De Todito", precio: 4.50, desc: "Pollo, carne, salchicha, huevo y papas", tarrina: true },
+                    { id: "p11", nombre: "Porción de papa", precio: 2.00, desc: "Porción adicional", tarrina: true },
+                    { id: "p12", nombre: "Porción de pollo", precio: 1.25, desc: "Porción adicional", tarrina: true },
+                    { id: "p13", nombre: "Porción de carne", precio: 1.25, desc: "Porción adicional", tarrina: true }
+                ]
+            },
+            {
+                id: "hamburguesas",
+                nombre: "🍔 Hamburguesas",
+                items: [
+                    { id: "h1", nombre: "Hamburguesa Normal", precio: 2.75, desc: "Carne, lechuga, tomate, cebolla, queso cheddar, salsa, mayonesa especial, papas", tarrina: true },
+                    { id: "h2", nombre: "Hamburguesa Especial", precio: 3.00, desc: "Carne, lechuga, tomate, cebolla, queso cheddar, huevo, salsa, mayonesa especial, papas", tarrina: true },
+                    { id: "h3", nombre: "Mini Vlady Burguer", precio: 3.25, desc: "Carne, champiñón, tocino, lechuga, tomate, cebolla, huevo, queso cheddar, salsa, mayonesa especial, papas", tarrina: true },
+                    { id: "h4", nombre: "Vlady Burguer (+ Gaseosa)", precio: 3.75, desc: "Carne, champiñón, tocino, lechuga, tomate, cebolla, huevo, queso cheddar, papas + Gaseosa Pepsi", tarrina: true },
+                    { id: "h5", nombre: "Hamburguesa Ranchera", precio: 4.25, desc: "Carne, pepinillos ácidos, doble tocino, doble queso cheddar, lechuga, tomate, cebolla perla, papas", tarrina: true },
+                    { id: "h6", nombre: "Vlady Broster (+ Gaseosa)", precio: 4.25, desc: "Pollo broster, champiñón, huevo, lechuga, tomate, cebolla, queso cheddar, papas + Gaseosa Pepsi", tarrina: true },
+                    { id: "h7", nombre: "Hamburguesa de Camarón", precio: 4.25, desc: "Camarón, champiñón, tocino, huevo, lechuga, tomate, cebolla, queso cheddar, papas", tarrina: true },
+                    { id: "h8", nombre: "Hamburguesa Doble (+ Gaseosa)", precio: 5.25, desc: "2 carnes, champiñón, 2 tocinos, huevo, 2 queso cheddar, lechuga, tomate, cebolla, papas + Gaseosa Pepsi", tarrina: true },
+                    { id: "h9", nombre: "Hamburguesa Hawayana (+ Gaseosa)", precio: 4.25, desc: "Carne, champiñón, tocino, piña, huevo, queso cheddar, lechuga, tomate, cebolla, papas + Gaseosa Pepsi", tarrina: true }
+                ]
+            },
+            {
+                id: "alitas",
+                nombre: "🍗 Alitas y Nuggets",
+                items: [
+                    { id: "a1", nombre: "Combo 5 Alitas", precio: 5.25, desc: "Incluye papas fritas + Gaseosa Pepsi", tarrina: true, opciones: ["BBQ", "Miel y Mostaza", "Maracuyá", "Picante"] },
+                    { id: "a2", nombre: "Combo 17 Alitas", precio: 11.25, desc: "Incluye papas fritas + Gaseosa Pepsi", tarrina: true, opciones: ["BBQ", "Miel y Mostaza", "Maracuyá", "Picante", "Surtidas (especificar en notas)"] },
+                    { id: "a3", nombre: "Combo 24 Alitas", precio: 15.25, desc: "Incluye papas fritas + Gaseosa Pepsi", tarrina: true, opciones: ["BBQ", "Miel y Mostaza", "Maracuyá", "Picante", "Surtidas (especificar en notas)"] },
+                    { id: "a4", nombre: "Combo 40 Alitas", precio: 24.25, desc: "Incluye papas fritas + Gaseosa Pepsi", tarrina: true, opciones: ["BBQ", "Miel y Mostaza", "Maracuyá", "Picante", "Surtidas (especificar en notas)"] },
+                    { id: "n1", nombre: "Promo 6 Nuggets", precio: 3.00, desc: "Incluye papas fritas", tarrina: true },
+                    { id: "n2", nombre: "Promo 12 Nuggets", precio: 4.75, desc: "Incluye papas fritas", tarrina: true },
+                    { id: "n3", nombre: "Promo 18 Nuggets", precio: 6.75, desc: "Incluye papas fritas", tarrina: true },
+                    { id: "n4", nombre: "Promo 24 Nuggets", precio: 8.75, desc: "Incluye papas fritas", tarrina: true },
+                    { id: "n5", nombre: "Promo 30 Nuggets", precio: 10.75, desc: "Incluye papas fritas", tarrina: true }
+                ]
+            },
+            {
+                id: "combos",
+                nombre: "🪣 Combos Familiares",
+                items: [
+                    { id: "cf1", nombre: "Vlady Combo Familiar 1 (5 presas)", precio: 10.25, desc: "5 presas de pollo, papas, ensalada y gaseosa Pepsi", tarrina: true },
+                    { id: "cf2", nombre: "Vlady Combo Familiar 2 (8 presas)", precio: 13.25, desc: "8 presas de pollo, papas, ensalada y gaseosa Pepsi", tarrina: true },
+                    { id: "cf3", nombre: "Vlady Combo Familiar 3 (10 presas)", precio: 15.25, desc: "10 presas de pollo, papas, ensalada y gaseosa Pepsi", tarrina: true },
+                    { id: "cf4", nombre: "Vlady Combo Familiar 4 (12 presas)", precio: 17.25, desc: "12 presas de pollo, papas, ensalada y gaseosa Pepsi", tarrina: true },
+                    { id: "cf5", nombre: "Vlady Combo Familiar 5 (16 presas)", precio: 24.25, desc: "16 presas de pollo, papas, ensalada y gaseosa Pepsi", tarrina: true }
+                ]
+            },
+            {
+                id: "hotdogs",
+                nombre: "🌭 Hot Dogs y Pepitos",
+                items: [
+                    { id: "hd1", nombre: "Hot Dog 1 (Solo)", precio: 1.75, desc: "Hot dog clásico", tarrina: true },
+                    { id: "hd2", nombre: "Hot Dog 2 (Combo)", precio: 2.25, desc: "Hot dog + Papas + Gaseosa Pepsi", tarrina: true },
+                    { id: "hd3", nombre: "Hot Dog 3 (Super Combo)", precio: 3.25, desc: "Hot dog + Papas + Presa de pollo + Gaseosa Pepsi", tarrina: true },
+                    { id: "pep1", nombre: "Pepito", precio: 7.25, desc: "Pechuga, carne, tocino, maíz dulce, salsa aguacate, queso cheddar, papas + Gaseosa Pepsi", tarrina: true }
+                ]
+            },
+            {
+                id: "bebidas",
+                nombre: "🥤 Bebidas y Batidos",
+                items: [
+                    { id: "b1", nombre: "Jugo en vaso", precio: 1.25, desc: "Jugo natural", tarrina: false, opciones: ["Mora", "Fresa", "Naranjilla", "Guanábana"] },
+                    { id: "b2", nombre: "Jarra de Jugo", precio: 3.50, desc: "Jarra familiar", tarrina: false, opciones: ["Mora", "Fresa", "Naranjilla", "Guanábana"] },
+                    { id: "b3", nombre: "Batido", precio: 2.00, desc: "Batido en leche", tarrina: false, opciones: ["Mora", "Fresa", "Naranjilla", "Guanábana"] },
+                    { id: "b4", nombre: "Michelada", precio: 2.75, desc: "Bebida preparada", tarrina: false, opciones: ["Fresa", "Maracuyá"] },
+                    { id: "b5", nombre: "Milkshake", precio: 2.75, desc: "Consultar sabores disponibles", tarrina: false },
+                    { id: "b6", nombre: "Cola Personal Pepsi", precio: 0.50, desc: "Personal", tarrina: false },
+                    { id: "b7", nombre: "Cola Personal Coca-Cola", precio: 1.00, desc: "Personal", tarrina: false },
+                    { id: "b8", nombre: "Cola 1 Litro", precio: 1.50, desc: "1 Litro", tarrina: false },
+                    { id: "b9", nombre: "Cola 1.5 Litros", precio: 1.75, desc: "1 ½ Litro", tarrina: false },
+                    { id: "b10", nombre: "Coca-Cola 3 Litros", precio: 4.00, desc: "Familiar 3 Litros", tarrina: false },
+                    { id: "b11", nombre: "Coca-Cola Lata", precio: 1.50, desc: "En lata", tarrina: false },
+                    { id: "b12", nombre: "Agua sin gas", precio: 0.50, desc: "Personal", tarrina: false },
+                    { id: "b13", nombre: "Agua con gas", precio: 0.75, desc: "Personal", tarrina: false },
+                    { id: "b14", nombre: "Agua de Jamaica", precio: 1.25, desc: "Vaso", tarrina: false },
+                    { id: "b15", nombre: "Naranjillada", precio: 0.75, desc: "Vaso", tarrina: false },
+                    { id: "b16", nombre: "Gatorade Válvula", precio: 1.25, desc: "Botella deportiva", tarrina: false },
+                    { id: "b17", nombre: "V220 Personal", precio: 0.75, desc: "Energizante personal", tarrina: false },
+                    { id: "b18", nombre: "V220 Normal", precio: 1.25, desc: "Energizante grande", tarrina: false },
+                    { id: "b19", nombre: "Red Bull", precio: 2.50, desc: "Lata", tarrina: false },
+                    { id: "bc1", nombre: "Bebida Caliente Clásica", precio: 1.00, desc: "Caliente", tarrina: false, opciones: ["Té", "Leche", "Café"] },
+                    { id: "bc2", nombre: "Café Americano", precio: 1.25, desc: "Caliente", tarrina: false },
+                    { id: "bc3", nombre: "Expreso o Chocolate", precio: 1.50, desc: "Caliente", tarrina: false, opciones: ["Expreso", "Chocolate"] },
+                    { id: "bc4", nombre: "Especiales de Café", precio: 2.00, desc: "Caliente", tarrina: false, opciones: ["Capuccino", "Capuccino Vainilla", "Mokaccino", "Café con Leche"] }
+                ]
+            }
+        ];
+
+        // =========================================================================
+        // 3. ESTADO DEL CARRITO Y LÓGICA DE INTERFAZ
+        // =========================================================================
+        let cart = [];
+        let currentModalItem = null;
+        let selectedOption = null;
+        let modalQty = 1;
+        let deliveryType = "Domicilio";
+        let paymentType = "Efectivo";
+        let gpsLink = "";
+
+        function initApp() {
+            renderCategories();
+            renderMenu();
+            document.getElementById("search-input").addEventListener("input", (e) => {
+                renderMenu(e.target.value.trim().toLowerCase());
+            });
+        }
+
+        function renderCategories() {
+            const nav = document.getElementById("category-nav");
+            nav.innerHTML = MENU_DATA.map(cat => `
+        <a href="#cat-${cat.id}" class="shrink-0 bg-neutral-800 hover:bg-yellow-400 hover:text-black text-neutral-200 text-xs font-bold px-3.5 py-2 rounded-full border border-neutral-700 transition">
+          ${cat.nombre}
+        </a>
+      `).join("");
+        }
+
+        function renderMenu(filter = "") {
+            const container = document.getElementById("menu-container");
+            container.innerHTML = MENU_DATA.map(cat => {
+                const filteredItems = cat.items.filter(item =>
+                    item.nombre.toLowerCase().includes(filter) ||
+                    (item.desc && item.desc.toLowerCase().includes(filter))
+                );
+                if (filteredItems.length === 0) return "";
+
+                return `
+          <section id="cat-${cat.id}" class="scroll-mt-28">
+            <h2 class="text-lg font-extrabold text-yellow-400 mb-3 border-b border-neutral-800 pb-1">${cat.nombre}</h2>
+            <div class="space-y-2.5">
+              ${filteredItems.map(item => `
+                <div class="bg-neutral-900 border border-neutral-800 rounded-2xl p-3.5 flex justify-between items-center gap-3 shadow">
+                  <div class="flex-1">
+                    <div class="flex items-center gap-2">
+                      <h3 class="font-bold text-white text-sm">${item.nombre}</h3>
+                      ${item.tarrina ? `<span class="text-[10px] bg-neutral-800 text-neutral-400 px-1.5 py-0.5 rounded border border-neutral-700">+$0.25 tarrina</span>` : ""}
+                    </div>
+                    <p class="text-xs text-neutral-400 mt-0.5">${item.desc || ""}</p>
+                    <p class="text-yellow-400 font-extrabold text-sm mt-1.5">$${item.precio.toFixed(2)}</p>
+                  </div>
+                  <button
+                    onclick="openItemModal('${item.id}')"
+                    class="bg-red-700 hover:bg-red-600 active:scale-95 text-white font-bold text-xs px-3.5 py-2.5 rounded-xl shrink-0 shadow"
+                  >
+                    + Agregar
+                  </button>
+                </div>
+              `).join("")}
+            </div>
+          </section>
+        `;
+            }).join("");
+        }
+
+        function findItemById(id) {
+            for (const cat of MENU_DATA) {
+                const found = cat.items.find(i => i.id === id);
+                if (found) return found;
+            }
+            return null;
+        }
+
+        function openItemModal(itemId) {
+            currentModalItem = findItemById(itemId);
+            if (!currentModalItem) return;
+
+            modalQty = 1;
+            selectedOption = null;
+            document.getElementById("modal-item-name").textContent = `${currentModalItem.nombre} ($${currentModalItem.precio.toFixed(2)})`;
+            document.getElementById("modal-item-desc").textContent = currentModalItem.desc || "";
+            document.getElementById("modal-item-note").value = "";
+            document.getElementById("modal-item-qty").textContent = modalQty;
+
+            const optContainer = document.getElementById("modal-options-container");
+            const optList = document.getElementById("modal-options-list");
+
+            if (currentModalItem.opciones && currentModalItem.opciones.length > 0) {
+                optContainer.classList.remove("hidden");
+                selectedOption = currentModalItem.opciones[0];
+                renderModalOptions();
+            } else {
+                optContainer.classList.add("hidden");
+            }
+
+            document.getElementById("item-modal").classList.remove("hidden");
+        }
+
+        function renderModalOptions() {
+            const optList = document.getElementById("modal-options-list");
+            optList.innerHTML = currentModalItem.opciones.map(opt => `
+        <button
+          type="button"
+          onclick="selectModalOption('${opt}')"
+          class="py-2 px-2.5 rounded-xl text-xs font-bold border text-left transition ${selectedOption === opt
+                    ? "border-yellow-400 bg-yellow-400/20 text-yellow-300"
+                    : "border-neutral-700 bg-neutral-800 text-neutral-300"
+                }"
+        >
+          ${opt}
+        </button>
+      `).join("");
+        }
+
+        function selectModalOption(opt) {
+            selectedOption = opt;
+            renderModalOptions();
+        }
+
+        function changeModalQty(delta) {
+            modalQty = Math.max(1, modalQty + delta);
+            document.getElementById("modal-item-qty").textContent = modalQty;
+        }
+
+        function closeItemModal() {
+            document.getElementById("item-modal").classList.add("hidden");
+        }
+
+        function confirmAddToCart() {
+            const note = document.getElementById("modal-item-note").value.trim();
+            cart.push({
+                uid: Date.now() + Math.random(),
+                item: currentModalItem,
+                qty: modalQty,
+                option: selectedOption,
+                note: note
+            });
+            closeItemModal();
+            updateCartUI();
+        }
+
+        function removeFromCart(uid) {
+            cart = cart.filter(c => c.uid !== uid);
+            updateCartUI();
+            if (cart.length === 0) closeCheckoutModal();
+            else renderCheckoutItems();
+        }
+
+        function calculateTotals() {
+            let subtotal = 0;
+            let totalTarrinasCount = 0;
+
+            cart.forEach(entry => {
+                subtotal += entry.item.precio * entry.qty;
+                if (entry.item.tarrina) {
+                    totalTarrinasCount += entry.qty;
+                }
+            });
+
+            const totalTarrinasCost = totalTarrinasCount * COSTO_TARRINA;
+            const grandTotal = subtotal + totalTarrinasCost;
+            const totalItems = cart.reduce((acc, c) => acc + c.qty, 0);
+
+            return { subtotal, totalTarrinasCount, totalTarrinasCost, grandTotal, totalItems };
+        }
+
+        function updateCartUI() {
+            const bar = document.getElementById("cart-bar");
+            if (cart.length === 0) {
+                bar.classList.add("hidden");
+                return;
+            }
+            bar.classList.remove("hidden");
+            const { grandTotal, totalItems } = calculateTotals();
+            document.getElementById("cart-count").textContent = `${totalItems} producto(s) en tu pedido`;
+            document.getElementById("cart-total-preview").innerHTML = `$${grandTotal.toFixed(2)} <span class="text-xs font-normal text-neutral-400">(inc. tarrinas)</span>`;
+        }
+
+        function openCheckoutModal() {
+            renderCheckoutItems();
+            document.getElementById("checkout-modal").classList.remove("hidden");
+        }
+
+        function closeCheckoutModal() {
+            document.getElementById("checkout-modal").classList.add("hidden");
+        }
+
+        function renderCheckoutItems() {
+            const container = document.getElementById("checkout-items");
+            container.innerHTML = cart.map(c => `
+        <div class="bg-neutral-800 px-3 py-2 rounded-xl flex justify-between items-center text-xs">
+          <div>
+            <p class="font-bold text-white">${c.qty}x ${c.item.nombre} ${c.option ? `<span class="text-yellow-400">(${c.option})</span>` : ""}</p>
+            ${c.note ? `<p class="text-neutral-400 italic">Nota: ${c.note}</p>` : ""}
+            <p class="text-neutral-300 font-semibold">$${(c.item.precio * c.qty).toFixed(2)} ${c.item.tarrina ? `<span class="text-[10px] text-neutral-400">(+${c.qty} tarrina)</span>` : ""}</p>
+          </div>
+          <button onclick="removeFromCart(${c.uid})" class="text-red-400 hover:text-red-300 font-bold px-2 py-1">🗑️</button>
+        </div>
+      `).join("");
+
+            const { subtotal, totalTarrinasCount, totalTarrinasCost, grandTotal } = calculateTotals();
+            document.getElementById("summary-subtotal").textContent = `$${subtotal.toFixed(2)}`;
+            document.getElementById("summary-tarrinas-label").textContent = `🥡 Tarrinas para llevar (${totalTarrinasCount} x $0.25):`;
+            document.getElementById("summary-tarrinas").textContent = `$${totalTarrinasCost.toFixed(2)}`;
+            document.getElementById("summary-total").textContent = `$${grandTotal.toFixed(2)}`;
+        }
+
+        function setDeliveryType(type) {
+            deliveryType = type;
+            const btnDel = document.getElementById("btn-delivery");
+            const btnPick = document.getElementById("btn-pickup");
+            const delFields = document.getElementById("delivery-fields");
+
+            if (type === "Domicilio") {
+                btnDel.className = "py-2.5 rounded-xl font-bold border border-yellow-400 bg-yellow-400/20 text-yellow-300";
+                btnPick.className = "py-2.5 rounded-xl font-bold border border-neutral-700 bg-neutral-800 text-neutral-300";
+                delFields.classList.remove("hidden");
+            } else {
+                btnPick.className = "py-2.5 rounded-xl font-bold border border-yellow-400 bg-yellow-400/20 text-yellow-300";
+                btnDel.className = "py-2.5 rounded-xl font-bold border border-neutral-700 bg-neutral-800 text-neutral-300";
+                delFields.classList.add("hidden");
+            }
+        }
+
+        function setPaymentType(type) {
+            paymentType = type;
+            const btnCash = document.getElementById("btn-cash");
+            const btnTrans = document.getElementById("btn-transfer");
+            const cashField = document.getElementById("cash-field");
+
+            if (type === "Efectivo") {
+                btnCash.className = "py-2 rounded-xl font-bold border border-yellow-400 bg-yellow-400/20 text-yellow-300";
+                btnTrans.className = "py-2 rounded-xl font-bold border border-neutral-700 bg-neutral-800 text-neutral-300";
+                cashField.classList.remove("hidden");
+            } else {
+                btnTrans.className = "py-2 rounded-xl font-bold border border-yellow-400 bg-yellow-400/20 text-yellow-300";
+                btnCash.className = "py-2 rounded-xl font-bold border border-neutral-700 bg-neutral-800 text-neutral-300";
+                cashField.classList.add("hidden");
+            }
+        }
+
+        function getGPSLocation() {
+            const status = document.getElementById("gps-status");
+            const btn = document.getElementById("gps-btn");
+            if (!navigator.geolocation) {
+                status.textContent = "❌ Tu navegador no soporta GPS.";
+                return;
+            }
+            btn.textContent = "⏳ Obteniendo coordenadas...";
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude.toFixed(6);
+                    const lng = pos.coords.longitude.toFixed(6);
+                    gpsLink = `https://maps.google.com/?q=${lat},${lng}`;
+                    btn.textContent = "✅ Ubicación GPS cargada";
+                    btn.className = "w-full py-2.5 px-3 rounded-xl bg-emerald-600 text-white font-bold text-xs flex items-center justify-center gap-2";
+                    status.textContent = "Coordenadas listas para adjuntar en el pedido.";
+                },
+                () => {
+                    btn.textContent = "📍 Obtener mi ubicación GPS actual";
+                    status.textContent = "⚠️ Permiso denegado. Puedes enviar tu ubicación en el chat de WhatsApp.";
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        }
+
+        function sendOrderToWhatsApp() {
+            const name = document.getElementById("client-name").value.trim();
+            const address = document.getElementById("client-address").value.trim();
+            const cashBill = parseFloat(document.getElementById("client-cash-bill").value);
+
+            if (!name) {
+                alert("Por favor ingresa tu nombre.");
+                return;
+            }
+            if (deliveryType === "Domicilio" && !address) {
+                alert("Por favor escribe tu barrio, calles y referencia de tu casa.");
+                return;
+            }
+
+            const { subtotal, totalTarrinasCount, totalTarrinasCost, grandTotal } = calculateTotals();
+
+            let lines = [];
+            lines.push(`🍔 *NUEVO PEDIDO — DONDE EL VLADY*`);
+            lines.push(`👤 *Cliente:* ${name}`);
+            lines.push(`🛵 *Modalidad:* ${deliveryType}`);
+            lines.push(``);
+            lines.push(`📋 *DETALLE DEL PEDIDO:*`);
+
+            cart.forEach(c => {
+                const optText = c.option ? ` [${c.option}]` : "";
+                const itemTotal = (c.item.precio * c.qty).toFixed(2);
+                lines.push(`• ${c.qty}x ${c.item.nombre}${optText} — $${itemTotal}`);
+                if (c.note) lines.push(`   _(Nota cocina: ${c.note})_`);
+            });
+
+            lines.push(``);
+            lines.push(`💵 *Subtotal platos:* $${subtotal.toFixed(2)}`);
+            lines.push(`🥡 *Tarrinas (${totalTarrinasCount} x $0.25):* $${totalTarrinasCost.toFixed(2)}`);
+            lines.push(`💰 *TOTAL COMIDA + TARRINAS: $${grandTotal.toFixed(2)}*`);
+
+            if (deliveryType === "Domicilio") {
+                lines.push(`_(⚠️ Más el valor de la carrera del motorizado)_`);
+            }
+
+            lines.push(``);
+            lines.push(`💳 *Pago:* ${paymentType}`);
+            if (paymentType === "Efectivo" && !isNaN(cashBill) && cashBill > grandTotal) {
+                const change = (cashBill - grandTotal).toFixed(2);
+                lines.push(`💵 *Paga con billete de:* $${cashBill.toFixed(2)} _(Vuelto sin contar carrera: $${change})_`);
+            }
+
+            if (deliveryType === "Domicilio") {
+                lines.push(`🏠 *Dirección / Referencia:* ${address}`);
+                if (gpsLink) {
+                    lines.push(`📍 *Ubicación GPS:* ${gpsLink}`);
+                } else {
+                    lines.push(`📍 *Ubicación GPS:* _(La envío a continuación en el chat)_`);
+                }
+            }
+
+            const message = encodeURIComponent(lines.join("\n"));
+            window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, "_blank");
+        }
+
+        initApp();
+    </script>
+</body>
+
+</html>
